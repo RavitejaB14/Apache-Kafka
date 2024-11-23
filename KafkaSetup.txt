@@ -141,6 +141,11 @@ zookeeper1/bin/zookeeper-server-start.sh config/zookeeper.properties
 zookeeper2/bin/zookeeper-server-start.sh config/zookeeper.properties
 zookeeper3/bin/zookeeper-server-start.sh config/zookeeper.properties
 
+or
+
+bin/zkServer.sh start-foreground
+
+
 kafka1/bin/kafka-server-start.sh config/server.properties
 kafka2/bin/kafka-server-start.sh config/server.properties
 kafka3/bin/kafka-server-start.sh config/server.properties
