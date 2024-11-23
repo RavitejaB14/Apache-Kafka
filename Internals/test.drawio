@@ -1,40 +1,40 @@
 <mxfile host="65bd71144e">
     <diagram id="fvs49mDEwJkf_aCMGHCz" name="Page-1">
-        <mxGraphModel dx="543" dy="646" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" background="none" math="0" shadow="0">
+        <mxGraphModel dx="564" dy="646" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" background="#ffffff" math="0" shadow="0">
             <root>
                 <mxCell id="0"/>
                 <mxCell id="1" parent="0"/>
-                <mxCell id="2" value="P0(L),P1(F)" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                <mxCell id="2" value="P0(L),P1(F)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#0050ef;fontColor=#ffffff;strokeColor=#001DBC;perimeterSpacing=20;" parent="1" vertex="1">
                     <mxGeometry x="405" y="80" width="120" height="100" as="geometry"/>
                 </mxCell>
-                <mxCell id="3" value="Broker 1" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+                <mxCell id="3" value="Broker 1" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=#001DBC;fillColor=#0050ef;fontColor=#ffffff;perimeterSpacing=20;" parent="1" vertex="1">
                     <mxGeometry x="430" y="40" width="70" height="30" as="geometry"/>
                 </mxCell>
-                <mxCell id="4" value="Broker 2" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+                <mxCell id="4" value="Broker 2" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=#001DBC;fillColor=#0050ef;fontColor=#ffffff;perimeterSpacing=20;" parent="1" vertex="1">
                     <mxGeometry x="430" y="230" width="70" height="30" as="geometry"/>
                 </mxCell>
-                <mxCell id="5" value="Broker 3" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+                <mxCell id="5" value="Broker 3" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=#001DBC;fillColor=#0050ef;fontColor=#ffffff;perimeterSpacing=20;" parent="1" vertex="1">
                     <mxGeometry x="440" y="420" width="70" height="30" as="geometry"/>
                 </mxCell>
-                <mxCell id="6" value="P1(L),P2(F)" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                <mxCell id="6" value="P1(L),P2(F)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#0050ef;fontColor=#ffffff;strokeColor=#001DBC;perimeterSpacing=20;" parent="1" vertex="1">
                     <mxGeometry x="405" y="260" width="120" height="100" as="geometry"/>
                 </mxCell>
-                <mxCell id="7" value="P0(F),P2(L)" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                <mxCell id="7" value="P0(F),P2(L)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#0050ef;fontColor=#ffffff;strokeColor=#001DBC;perimeterSpacing=20;" parent="1" vertex="1">
                     <mxGeometry x="405" y="450" width="120" height="100" as="geometry"/>
                 </mxCell>
-                <mxCell id="8" value="Partition: 0&lt;span style=&quot;&quot;&gt;&#9;&lt;/span&gt;Leader: 1&lt;span style=&quot;&quot;&gt;&#9;&lt;/span&gt;Replicas: 1,3&lt;span style=&quot;&quot;&gt;&#9;&lt;/span&gt;Isr: 1,3" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+                <mxCell id="8" value="Partition: 0&lt;span style=&quot;&quot;&gt;&#9;&lt;/span&gt;Leader: 1&lt;span style=&quot;&quot;&gt;&#9;&lt;/span&gt;Replicas: 1,3&lt;span style=&quot;&quot;&gt;&#9;&lt;/span&gt;Isr: 1,3" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=#001DBC;fillColor=#0050ef;fontColor=#ffffff;perimeterSpacing=20;" parent="1" vertex="1">
                     <mxGeometry x="40" y="130" width="250" height="30" as="geometry"/>
                 </mxCell>
-                <mxCell id="9" value="Partition: 1&lt;span style=&quot;&quot;&gt;&#9;&lt;/span&gt;Leader: 2&lt;span style=&quot;&quot;&gt;&#9;&lt;/span&gt;Replicas: 2,1&lt;span style=&quot;&quot;&gt;&#9;&lt;/span&gt;Isr: 2,1" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+                <mxCell id="9" value="Partition: 1&lt;span style=&quot;&quot;&gt;&#9;&lt;/span&gt;Leader: 2&lt;span style=&quot;&quot;&gt;&#9;&lt;/span&gt;Replicas: 2,1&lt;span style=&quot;&quot;&gt;&#9;&lt;/span&gt;Isr: 2,1" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=#001DBC;fillColor=#0050ef;fontColor=#ffffff;perimeterSpacing=20;" parent="1" vertex="1">
                     <mxGeometry x="40" y="295" width="250" height="30" as="geometry"/>
                 </mxCell>
-                <mxCell id="10" value="Partition: 2&#9;Leader: 3&#9;Replicas: 3,2&#9;Isr: 3,2" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+                <mxCell id="10" value="Partition: 2&#9;Leader: 3&#9;Replicas: 3,2&#9;Isr: 3,2" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=#001DBC;fillColor=#0050ef;fontColor=#ffffff;perimeterSpacing=20;" parent="1" vertex="1">
                     <mxGeometry x="35" y="470" width="250" height="30" as="geometry"/>
                 </mxCell>
-                <mxCell id="11" value="ISR are nothing but the subset of replicas&lt;br&gt;Here in the First Partiton 0, ISR is 1,3&lt;br&gt;Here 1,3 will be in Sync&lt;br&gt;If the Message is produced in replica 1, &lt;br&gt;the same will be replicated in replica 3 using&amp;nbsp;&lt;br&gt;Fetch requests" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+                <mxCell id="11" value="ISR are nothing but the subset of replicas&lt;br&gt;Here in the First Partiton 0, ISR is 1,3&lt;br&gt;Here 1,3 will be in Sync&lt;br&gt;If the Message is produced in replica 1, &lt;br&gt;the same will be replicated in replica 3 using&amp;nbsp;&lt;br&gt;Fetch requests" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=#001DBC;fillColor=#0050ef;fontColor=#ffffff;perimeterSpacing=20;" parent="1" vertex="1">
                     <mxGeometry x="35" y="160" width="260" height="100" as="geometry"/>
                 </mxCell>
-                <mxCell id="12" value="Leader is responsible for Read and Write Operations" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+                <mxCell id="12" value="Leader is responsible for Read and Write Operations" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=#001DBC;fillColor=#0050ef;fontColor=#ffffff;perimeterSpacing=20;" parent="1" vertex="1">
                     <mxGeometry x="30" y="10" width="300" height="30" as="geometry"/>
                 </mxCell>
             </root>
