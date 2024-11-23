@@ -27,3 +27,21 @@ Fetch requests
 
 
 * What happens Internally if we create a topic
+
+Partition State: (These state are managed by controller Node)
+
+1. NonExistentPartition: Indicates that the partition is either never created or was created and then deleted.
+2. New partition: After creation, Partition will be in new Partition state, In this state, the partition should have replicas assigned to it, but no leader/no ISR.
+3. Online Partition: Once a leader is elected for a partition, it is in the Online partitions.
+4. Offline Partition: If after successfull leader election, the leader for partition dies, then the partition moves to Offline Partition state.
+
+Replica State: (These state are managed by controller Node)
+
+1. New replica: When replicas are created during topic creation or partition reassignment. In this state, a replica can only get become follower state change request.
+2. Online replica: Once a replica is started and part of the assigned replicas for its partition, it in this state, it can get either become leader or become follower state change request.
+3. Offline replica: If a replica dies, it moves to this state. This happens when the broker hosting the replica is down.
+4. NonExistentreplica: If a replica is deleted, It is moved this state.
+
+
+KAFKA CONTROLLER NODE: In a Kafka Cluster, One of the brokers serves as the controller,
+which is responsible for managing the states of partitions and replicas and for performing administrative tasks like reassiging partitions.
