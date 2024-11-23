@@ -1,0 +1,178 @@
+Step1: Download the tgz file from : https://kafka.apache.org/downloads
+
+Step2: Extract and unzip the file: tar -xzf kafka_2.13–3.5.0.tgz
+
+Step3: Start Zoopkeeper: Zookeeper is mandatory in the kafka cluster and broker(server) will not be started if zookeeper is unavailable.
+
+cd to Kafka directory
+
+bin/zookeeper-server-start.sh config/zookeeper.properties
+
+Step 4: Start the Kafka Server: This will start the Kafka broker, and it will be ready to receive and process messages.
+
+bin/kafka-server-start.sh config/server.properties
+
+Commands:
+
+1. To Know the Kafka Version: bin/kafka-broker-api-versions.sh --version
+2. To Create Kafka Topic: bin/kafka-topics.sh --create --topic cities --bootstrap-server localhost:9092
+3. List All the Kafka Topics: bin/kafka-topics.sh --list --bootstrap-server localhost:9092
+4. To Describe the Kafka Topic: bin/kafka-topics.sh --describe --topic cities --bootstrap-server localhost:9092
+5. Produce Messages to kafka Topic: bin/kafka-console-producer.sh --topic cities --bootstrap-server localhost:9092
+6. Consume Messages from Kafka Topic: bin/kafka-console-consumer.sh --topic cities --bootstrap-server localhost:9092
+7. Consume all Messages from Beginning: bin/kafka-console-consumer.sh --topic cities --from-beginning --bootstrap-server localhost:9092
+8. Create kafka Topic with replication factor 1 and partitions as 1:  bin/kafka-topics.sh --create --bootstrap-server localhost:9092 --replication-factor 1 --partitions 1 --topic test-topic
+
+
+Configuring Single zookeeper with Multiple Brokers
+
+Step 1: No Changes in the Zookeeper properties is required.
+Step 2: 
+    $ cp /usr/local/etc/kafka/server.properties /usr/local/etc/kafka/server-1.properties
+    $ cp /usr/local/etc/kafka/server.properties /usr/local/etc/kafka/server-2.properties
+    $ cp /usr/local/etc/kafka/server.properties /usr/local/etc/kafka/server-3.properties
+Step3: 
+
+File: server-1.properties
+broker.id=1
+listeners=PLAINTEXT://:9093
+log.dirs=/tmp/kafka-logs-1
+
+File: server-2.properties
+broker.id=2
+listeners=PLAINTEXT://:9094
+log.dirs=/tmp/kafka-logs-2
+
+File: server-3.properties
+broker.id=3
+listeners=PLAINTEXT://:9095
+log.dirs=/tmp/kafka-logs-3
+
+Step 4: Run Zookeeper and Kafka Servers
+
+bin/zookeeper-server-start.sh config/zookeeper.properties
+
+bin/kafka-server-start.sh config/server1.properties
+bin/kafka-server-start.sh config/server2.properties
+bin/kafka-server-start.sh config/server3.properties
+
+Step 5: Create a topic
+
+$ bin/kafka-topics.sh --create --topic multiBrokers --bootstrap-server localhost:9093,localhost:9094,localhost:9095 --partitions 7 --replication-factor 3
+
+Step 6: Describe the Kafka Topic
+
+$ bin/kafka-topics.sh --describe --topic multiBrokers --bootstrap-server localhost:9093,localhost:9094,localhost:9095
+
+Step 7: Produce a Message
+
+$ bin/kafka-console-producer.sh --topic multiBrokers --bootstrap-server localhost:9093,localhost:9094,localhost:9095
+> To stream, or not to stream: that is a Kafka question ... ~ William Kafka 
+
+Step 8: Consume the Message
+
+$ bin/kafka-console-consumer.sh --topic multiBrokers --bootstrap-server localhost:9093,localhost:9094,localhost:9095 --from-beginning
+To stream, or not to stream: that is a Kafka question ... ~ William Kafka
+
+
+MultiNode Kafka Cluster Setup
+
+
+Step1: Create three copies of zookeeper bin folder(zookeeper1,zookeeper2,zookeeper3) and edit the Zookeeper.properties in those three files
+
+# The number of milliseconds of each tick
+tickTime=2000
+# The number of ticks that the initial 
+# synchronization phase can take
+initLimit=10
+# The number of ticks that can pass between 
+# sending a request and getting an acknowledgement
+syncLimit=5
+# the directory where the snapshot is stored.
+# do not use /tmp for storage, /tmp here is just 
+# example sakes.
+dataDir=/Users/ravbatta/Downloads/kafka_2.13_test/config/kafka/data/zookeeper1
+# the port at which the clients will connect
+clientPort=2181
+# the maximum number of client connections.
+# increase this if you need to handle more clients
+maxClientCnxns=0
+#
+# Be sure to read the maintenance section of the 
+# administrator guide before turning on autopurge.
+#
+# https://zookeeper.apache.org/doc/current/zookeeperAdmin.html#sc_maintenance
+#
+# The number of snapshots to retain in dataDir
+#autopurge.snapRetainCount=3
+# Purge task interval in hours
+# Set to "0" to disable auto purge feature
+#autopurge.purgeInterval=1
+
+## Metrics Providers
+#
+# https://prometheus.io Metrics Exporter
+#metricsProvider.className=org.apache.zookeeper.metrics.prometheus.PrometheusMetricsProvider
+#metricsProvider.httpHost=0.0.0.0
+#metricsProvider.httpPort=7000
+#metricsProvider.exportJvmInfo=true
+
+4lw.commands.whitelist=*
+server.1=localhost:2788:3788
+server.2=localhost:2888:3888
+server.3=localhost:2988:3988
+
+
+Step2 : Create the data directry for all 3 zookeeper instance to store the data
+
+mkdir -p /Users/ravbatta/Downloads/kafka_2.13-3.9.0/config/kafka/data/zookeeper1
+mkdir -p /Users/ravbatta/Downloads/kafka_2.13-3.9.0/config/kafka/data/zookeeper2
+mkdir -p /Users/ravbatta/Downloads/kafka_2.13-3.9.0/config/kafka/data/zookeeper3
+
+Step3 : Creating the unique id for each zookeeper instance
+
+echo 1 > /Users/ravbatta/Downloads/kafka_2.13-3.9.0/config/kafka/data/zookeeper1/myid
+echo 2 > /Users/ravbatta/Downloads/kafka_2.13-3.9.0/config/kafka/data/zookeeper2/myid
+echo 3 > /Users/ravbatta/Downloads/kafka_2.13-3.9.0/config/kafka/data/zookeeper3/myid
+
+Step 4: Run Zookeeper and Kafka Servers
+
+zookeeper1/bin/zookeeper-server-start.sh config/zookeeper.properties
+zookeeper2/bin/zookeeper-server-start.sh config/zookeeper.properties
+zookeeper3/bin/zookeeper-server-start.sh config/zookeeper.properties
+
+kafka1/bin/kafka-server-start.sh config/server.properties
+kafka2/bin/kafka-server-start.sh config/server.properties
+kafka3/bin/kafka-server-start.sh config/server.properties
+
+and Change the below properties in config/server.properties
+
+broker.id
+listeners
+log.dirs
+zookeeper.connect=localhost:2181,localhost:2182,localhost:2183
+
+Step 5: 
+
+Kafka brokers will be registered in Zookeepers saying that I am there in Kafka Cluster, to check that
+
+echo dump | nc localhost 2181 | grep brokers
+
+/brokers/ids/3
+/brokers/ids/1
+/brokers/ids/2
+
+
+Step6: To check with broker is controller: echo dump | nc localhost 2181
+Step7: Create the Kafka Topic
+
+bin/kafka-topics.sh --create --bootstrap-server localhost:9092,localhost:9093,localhost:9094 --replication-factor 3 --partitions 3 --topic topic1
+bin/kafka-topics.sh --describe --bootstrap-server localhost:9092,localhost:9093,localhost:9094  --topic topic1
+
+[2024-11-15 13:00:02,853] WARN [AdminClient clientId=adminclient-1] Connection to node -3 (localhost/127.0.0.1:9094) could not be established. Node may not be available. (org.apache.kafka.clients.NetworkClient)
+Topic: topic1	TopicId: WHWs5b0ySo-MPlneN4o1aA	PartitionCount: 3	ReplicationFactor: 3	Configs: 
+	Topic: topic1	Partition: 0	Leader: 1	Replicas: 1,3,2	Isr: 1,3,2	Elr: N/A	LastKnownElr: N/A
+	Topic: topic1	Partition: 1	Leader: 2	Replicas: 2,1,3	Isr: 2,1,3	Elr: N/A	LastKnownElr: N/A
+	Topic: topic1	Partition: 2	Leader: 3	Replicas: 3,2,1	Isr: 3,2,1	Elr: N/A	LastKnownElr: N/A
+
+

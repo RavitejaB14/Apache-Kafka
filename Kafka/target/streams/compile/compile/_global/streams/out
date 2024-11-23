@@ -1,0 +1,4 @@
+[0m[[0m[33mwarn[0m] [0m[0m/Users/ravbatta/Documents/Github/Apache-Kafka/Kafka_Producer/src/main/scala/KafkaProducer.scala:2:43: imported `KafkaProducer` is permanently hidden by definition of object KafkaProducer[0m
+[0m[[0m[33mwarn[0m] [0m[0mimport org.apache.kafka.clients.producer.{KafkaProducer, ProducerConfig, ProducerRecord}[0m
+[0m[[0m[33mwarn[0m] [0m[0m                                          ^[0m
+[0m[[0m[33mwarn[0m] [0m[0mone warning found[0m
