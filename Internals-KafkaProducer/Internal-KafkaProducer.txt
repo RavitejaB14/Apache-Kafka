@@ -1,0 +1,33 @@
+When Producer sends messages
+
+See Kafka-producer.png file
+
+Here 0,1,2,3,4 are nothing but offsets (Sequence Id)
+
+Messages are stored in Partitions inform of Offsets. It helps in Identifying the messages 
+
+
+Offsets:
+
+The records in the partitions are each assigned a sequential id number called "offset" that uniquely identifies each record within the partition.
+
+Three Variations of partition:
+
+1. Log-end Offset: Offset of the last messages written to the partition. (P0 -> 3, P1 -> 2, P3 -> 2)
+2. Current Offset: Pointer to the last record that kafka has already sent to consumer in the most recent poll.
+3. Committed Offset: Marking an offset as consumed is called committing an offset(Committed Offset).
+
+
+Kafka Producer: Sends message with two fields
+
+Key : Used to send message based on partition level. If we give key value, then Messages will go to that particular partition.
+
+If key is null, then messages will be sent in round robin fashion for each partition.
+Payload: Message
+
+In the partition level, In addition to key and payload, It will also stored
+key
+payload
+Partition
+Offset
+Timestamp

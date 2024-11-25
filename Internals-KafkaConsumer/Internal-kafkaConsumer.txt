@@ -1,0 +1,28 @@
+Internal of Kafka consumer
+
+consumer.poll() :  Consumer will check with kafka cluster to consume messages from Kafka cluster.
+
+How many message to read:
+ max.poll.records = 15 : means, It will poll 15 messages each time from kafka cluster.
+
+
+Consumer.commit(): When consumer consumes message from Kafka Cluster/Topic, Consumer sends as an acknowledge that this message is comsumed, this is called consumer.commit().
+
+Current Offset: Means suppose if the kafka broker sends 4 messages and consumer group consumes the messages.(always kafka broker have info about Consumer group)
+This information is stored by the kafka cluster that I sent 4messages to this consumer group. For this case, current offset of consumer group 1 is "3".
+
+Committed Offset: If offset 0 is processed, It will send back the ack to kafka broker that commit this offset. which means committed offset is "0".
+
+NOTE: Always Committed Offset should be less than Current Offset.
+
+
+There are two types of acknowledgment from consumer:
+
+1. Auto Commit: When ever consumer consumes messages, It will Auto commit after particular time by kafka broker that consumer consumes all the messages without giving ackment
+In this case , If consumer crashes while processing messages, we will be having data loss.
+
+2. Manual commit: IN this case, Consumer will inform to broker as an ackment that I consumed the message.Kafka cluster will wait for the ackment from the consumer
+ - there are two types:
+  -> If all 4meesages sent to consumer, then ackment will be sent to kafka broker.
+  -> Second, it will go in more granular, for each message, it will send ackemnt to Kafka Broker.
+  

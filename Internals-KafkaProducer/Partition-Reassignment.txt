@@ -1,0 +1,57 @@
+Lets create a topic with 1 replication-factor and 1 Partition
+
+bin/kafka-topics.sh --create --bootstrap-server localhost:9092 --replication-factor 1 --partitions 1 --topic partition-reassign
+
+Describe:
+
+bin/kafka-topics.sh --describe --bootstrap-server localhost:9092  --topic partition-reassign
+
+
+Topic: partition-reassign	TopicId: eZyTN9_HTb2EPjA0Zl4L-g	PartitionCount: 1	ReplicationFactor: 1	Configs: 
+	Topic: partition-reassign	Partition: 0	Leader: 1	Replicas: 1	Isr: 1	Elr: N/A	LastKnownElr: N/A
+
+Let's Increase the partitions: (we can increase the partition, not decrease , becoz of data loss)
+
+bin/kafka-topics.sh --alter --bootstrap-server localhost:9092  --partitions 2 --topic partition-reassign
+
+bin/kafka-topics.sh --describe --bootstrap-server localhost:9092  --topic partition-reassign
+
+Topic: partition-reassign	TopicId: SQu8zsWXSKStYkV3PRm_8Q	PartitionCount: 2	ReplicationFactor: 1	Configs: 
+	Topic: partition-reassign	Partition: 0	Leader: 1	Replicas: 1	Isr: 1	Elr: N/A	LastKnownElr: N/A
+	Topic: partition-reassign	Partition: 1	Leader: 2	Replicas: 2	Isr: 2	Elr: N/A	LastKnownElr: N/A
+
+
+
+Partition Re-Assignment: These are managed by Kafka Controller node , Controller node info will be maintained by zookeeper.
+
+Use Case:
+
+1. Move partitions across brokers
+2. Selectively move replicas of a partition to a specific set of brokers
+3. Increasing the replication factor
+
+
+
+1. Move partitions across brokers:
+
+Create a json file like below:
+
+{
+"topics":[{"topic": "partition-reassign"}],
+"version": 1
+}
+
+bin/kafka-reassign-partitions.sh --bootstrap-server localhost:2181 --topics-to-move-json-file topicToMove.json --broker-list "2,3" --generate
+
+Copy the return Json file and  create a new json and execute:
+
+bin/kafka-reassign-partitions.sh --bootstrap-server localhost:2181 --reassignment-json-file expand-cluster-reassignment.json --execute
+
+bin/kafka-reassign-partitions.sh --bootstrap-server localhost:2181 --reassignment-json-file expand-cluster-reassignment.json --verify
+
+
+
+
+
+
+
