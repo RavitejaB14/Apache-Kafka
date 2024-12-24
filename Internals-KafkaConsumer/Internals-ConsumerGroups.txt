@@ -1,0 +1,45 @@
+Internals of Consumer Group:
+
+Consumer group is the Logical entity in kafka ecosystem which mainly provides parallal processing/Scalable message consumption to consumer clients.
+
+1. Each consumer is associated with some consumer group.
+2. Makes sure there is no duplication within consumers who are part of the same consumer group.
+
+
+Consumer group rebalancing :
+
+The process of re-distributing partitions to the consumers within a consumer group is known as Consumer Group rebalancing.
+
+Rebalancing of consumer group happens in below cases:
+1.  A Consumer joining the consumer group.
+2. A Consumer leaving the consumer group.
+3. If partitions are added to the topics which these consumers are interested in.
+4. If a partitions goes in offline state.
+
+
+Group Coordinator:
+
+1. Brokers in the kafka Cluster are assigned as a group Coordinator for a subset of consumer groups.
+2. Group Coordinator basically maintains/manages a list of consumer groups.
+3. Group Coordinator initiates the rebalance process call.
+4. Group Coordinator communicates the new assignment of partitions to all the comsumers.
+
+Note: Until the rebalance process is not finished, the consumers within the consumers group(Whose rebalance is happening) will be blocked for any message reads.
+
+
+Group Leader:
+
+1. First consumer to join to the consumer group is elected as a group leader.
+2. Group leader has the list of active members and the selected assignment strategy.
+3. Group leader executes the rebalance process.
+4. Group leader sends the new assignment of partitions to the group Coordinator.
+
+
+* What happens when consumer joins the consumer group.
+
+1. When a consumer starts, It sends "FindCoordinator" request to obtain the group Coordinator which is responsible for its group.
+2. Then the consumer initiates the rebalance protocol by sending a "JoinGroup" request.
+3. Next, all members of that consumer group send a "SyncGroup" request to the Coordinator.
+4. Each consumer periodically sends a "Heatbeat" request to the group Coordinator to keep its session alive.
+
+

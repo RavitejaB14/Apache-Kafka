@@ -1,0 +1,53 @@
+Demo on Kafka Internal of Producer, consumer, Consumer Group.
+
+
+Step1: Start all zookeeper(3) and kafka brokers(3).
+
+Step2: Create a kafka topic:
+
+bin/kafka-topics.sh --bootstrap-server localhost:9092,localhost:9093,localhost:9094  --create --topic myTopic --partitions 3 --replication-factor 3
+
+Step 3: 
+➜  kafka_1 bin/kafka-topics.sh --bootstrap-server localhost:9092,localhost:9093,localhost:9094  --topic myTopic --describe                           
+Topic: myTopic	TopicId: jb_O23kxQZucx3bDItJL3g	PartitionCount: 3	ReplicationFactor: 3	Configs: 
+	Topic: myTopic	Partition: 0	Leader: 1	Replicas: 1,2,3	Isr: 1,2,3	Elr: N/A	LastKnownElr: N/A
+	Topic: myTopic	Partition: 1	Leader: 2	Replicas: 2,3,1	Isr: 2,3,1	Elr: N/A	LastKnownElr: N/A
+	Topic: myTopic	Partition: 2	Leader: 3	Replicas: 3,1,2	Isr: 3,1,2	Elr: N/A	LastKnownElr: N/A
+
+Step 4: Create / Start a consumer or consumer Group:
+
+bin/kafka-console-consumer.sh --topic myTopic --bootstrap-server localhost:9092 --group myGroup
+
+Step4: Create a producer and start sending data, consumer should receive:
+
+bin/kafka-console-producer.sh --topic myTopic --bootstrap-server localhost:9092
+
+Step5: Describe the consumer Group:
+
+ kafka_1 bin/kafka-consumer-groups.sh --bootstrap-server localhost:9092 --group myGroup --describe
+
+GROUP           TOPIC           PARTITION  CURRENT-OFFSET  LOG-END-OFFSET  LAG             CONSUMER-ID                                           HOST            CLIENT-ID
+myGroup         myTopic         0          3               3               0               console-consumer-a02b4dd9-1a08-4992-a87b-d65c06972f5e /127.0.0.1      console-consumer
+myGroup         myTopic         1          0               0               0               console-consumer-a02b4dd9-1a08-4992-a87b-d65c06972f5e /127.0.0.1      console-consumer
+myGroup         myTopic         2          0               0               0               console-consumer-a02b4dd9-1a08-4992-a87b-d65c06972f5e /127.0.0.1      console-consumer%  
+
+This consumer is Subscribed to all the three partitions. see the consumer ID.
+
+Step 6: Create a another consumer that is part of same consumer group.
+
+bin/kafka-console-consumer.sh --topic myTopic --bootstrap-server localhost:9092 --group myGroup
+
+Step7: Describe consumer group:
+
+➜  kafka_1 bin/kafka-consumer-groups.sh --bootstrap-server localhost:9092 --group myGroup --describe
+
+GROUP           TOPIC           PARTITION  CURRENT-OFFSET  LOG-END-OFFSET  LAG             CONSUMER-ID                                           HOST            CLIENT-ID
+myGroup         myTopic         0          7               7               0               console-consumer-28bcb9cb-846a-451b-b1b8-98491f298fdf /127.0.0.1      console-consumer
+myGroup         myTopic         1          0               0               0               console-consumer-28bcb9cb-846a-451b-b1b8-98491f298fdf /127.0.0.1      console-consumer
+myGroup         myTopic         2          0               0               0               console-consumer-a02b4dd9-1a08-4992-a87b-d65c06972f5e /127.0.0.1      console-consumer
+
+
+So this consumer group is Subscribed to parition 2: See Consumer ID: onsole-consumer-a02b4dd9-1a08-4992-a87b-d65c06972f5e
+
+
+
