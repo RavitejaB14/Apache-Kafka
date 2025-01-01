@@ -1,0 +1,1 @@
+$KAFKA_HOME/bin/kafka-topics --describe  --zookeeper localhost:2181 --topic invoice

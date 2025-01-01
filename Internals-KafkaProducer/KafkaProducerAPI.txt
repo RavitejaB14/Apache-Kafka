@@ -1,0 +1,121 @@
+Kafka Producer API:
+
+Download "hello-producer-starter.zip"
+
+
+producer.send(new ProducerRecord<>(AppConfigs.topicName, i, "SimpleMessage-" + i));
+
+We package the message content in the producer object with atleast two manadatory things, 
+
+Mandatory Arguments:
+
+1. Kafka topic  - Destination Address of the message.
+2. Message value - Main content of the message.
+
+Optional Arguments:
+
+1. Topic Partition
+2. Timestamp
+3. Message Key - this is used for Partitions , grouping , joins
+
+
+Producer Serializer?
+
+The Kafka Producer is supposed to transmit the ProducerRecord to the kafka broker over the network, 
+However , it doesnot Immediately transfer the messages.
+
+Each record goes through Serialization, Partitioning , and then it is kept in the buffer
+
+Serialization - Is to send data over the network. that's why we are giving Key and value Serializer.
+
+Producer Partitioning :
+
+Kafka topic are partitioned and hence the producer can also decide on which partition the message should send.
+
+There are two approches to specify the target the partition number for the message. 
+
+1. Set partition Number argument in the ProducerRecord.
+2. Supply the partitioner class to determine the partition number at runtime.
+
+props.put(ProducerConfig.PARTITIONER_CLASS_CONFIG, MyPartitioner.class.getName());
+
+Kafka Producer comes with the default Partitioner which is most commonly used partitioner.
+
+Default partitioners:
+
+1. Hash key Partitioning - if the message key exists, this partitioner will use the hashing algorithm on the key (Hash(key) % #Partitions) to determine the partition number of the message. 
+The hashing ensures that all the messages with the same key go to the same Partition. 
+This will take number of partitions as one of the inputs. So If we increase the number of partitions in the topic, this partitioner starts giving a different output. That means, if the partition is based on the key, then you should create a topic with enough partitions and never increase at later stage.
+You can easily over provision the number of partitions in the topic. I mean, if you need 100 partitions, you can easily overprovision it by 25 %  and create 125 partitions. There is no harm in taking this approach.
+But remember , if you do increase the number of partitions later, you may have to redistribute the existing messages.
+
+2. Round Robin Partitioning - if the message key is null, the default partitioner will use the Round robin method to achieve an equal distribution amoung the available partitions.
+That means, the first message goes to one partition, second message goes to another partition and partitioner repeats in a loop.
+
+
+Kafka Message Timestamp - The Producer Record takes an Optional timestamp field.
+However, for a real time streaming application, the timestamp is the most critical value.
+Every message in kafka is automatically timestamped even if you do not explicitly specify it.
+
+Kafka allows you to implement one of the two types of message time stamping mechanism.
+
+1. Create time - The time when the message was produced.
+2. Log Append time - The time when the message was received at the Kafka Broker.
+
+we cannot use both..
+
+Your application must decide between these two timestamping methods while creating a topic
+
+You can set the 'message.timestamp.type' topic configuration to 0 for using CreateTime Or You can set to 1 for using Log Append time. The default value is  0(CreateTime)
+
+The Producer API automatically sets the current producer time to the ProducerRecord #timestamp field.
+However, you can override the auto time stamping by explicitly specifying this argument.
+So the message is trasmitted with the producer time, either automatically set by the producer or explicitly set by the developer.
+
+
+When using the Log Append Time configuration, the broker will override the producer timestamp with its current local time before appending the message to the log.
+In this case, the producer time is overwritten by the broker time., However the message will always have a timestamp, either a producer time or the broker time.
+
+
+Kafka Message Buffer:
+
+Once Serialized and assigned a target partition number, the message goes to sit in the buffer waiting to be trasmitted.
+
+The producer object consists of a partition wise buffer space that holds the records that haven't yet been sent to server.
+
+Producer also run a Background I/O thread that is responsible  for turning these records into requests and tranferring them to the cluster.
+
+Why do we have this buffering?
+
+1. Asynchronous send API - Buffering arrangement makes the send messages Asynchronous, that means the sender method will add the messages to the buffer and return without blocking. Those records are transmitted by the Background I/O thread.
+This arrangement is quite convincing as your send() method is not delayed for the network operation.
+Buffering also  allows the Background I/O Thread to combine the multiple messages from the same buffer and transmit them together as a single packet to achieve better throughput.
+But there is critical consideration - 
+1. if the records are posted faster than they can be trasmitted to the server, then this buffer space will be exhausted and you next send method will block  for few milliseconds until the buffer is freed  by the I/O thread.
+2. if the I/O thread takes too long to release the buffer, then your send method throws a timeout exception, when you are seeing such timeout exceptions, you may want to increase the producer memory.
+the default producer memory is 32MB. You can expand the total memory allocated for the buffer by setting 'buffer.memory' Producer configuration.
+
+2. Network Round Trip Optimization 
+
+
+ Producer I/O thread and retries ?
+
+ The producer background I/O thread is responsible for transmitting the Serialized messages that are waiting in the topic partition buffer. 
+ When the broker receives the message, it sends back the acknowledgement. If the message is successfully written to kafka, Broker will return a success acknowledgement.
+ The broker failed to write the message, it would return an error. when the background I/O thread receives an error or doesnot receive an acknowledgement, it may retry sending the messages a few more times before giving up and throwing back an error.
+ You can control the number of retries by setting the retries Producer configuration, When all the retries are failed, the I/O thread will return the error to the send() method 
+
+
+Summary:
+
+1. We use the producer.send() method to handover the ProducerRecord to the KafkaProducer Object.
+2. The KafkaProducer object will internally serialize the message key  and message value and provide the serializers using the properties object.
+3. Then the producer will determine the target partition number for the message to be delivered. You can create a custom Partitioner class using the properties object or provide a key and let the producer use the default partitioner.
+4. The serialized message goes and sits into a buffer depending upon the destination address. For each destination, we have a separate buffer.
+5. Finally, an I/O thread that runs a background will pick some messages from the buffer, combine them into a one single packet and send it to the broker.
+6. The Broker will save the data into log file and send back an acknowledgement to I/O thread.
+7. If I/O thread does not receive an acknowledgement, it will try resending the packet and agin wait for an acknowledgement. if we do not get an acknowledgement at all even after some retries, or get an error message, the I/O thread will give error back to the send method.
+ 
+
+
+

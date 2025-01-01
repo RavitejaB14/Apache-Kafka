@@ -1,0 +1,302 @@
+Kafka Cluster Architecture:
+
+Next Logical step is to look at the scalability side of Apache Kafka and how cluster is formed.
+
+** Brokers are often configured to form a cluster.
+
+A Cluster is nothing but the group of Brokers that work together to share the workload, that's how Apache kafka becomes
+distributed and scalable system.
+
+
+Cluter membership : 
+In a typical Distributed System, There is a master node that maintains a list of cluster members.
+Master always knows the state of other members.
+
+This is about the master node. 
+who manages the list of active brokers?
+how does it know that broker has possibly crashed?
+or a new broker has recently joined the cluster?
+
+
+Administrative tasks: These are performed by master in cluster environment.
+
+For Example:
+
+This is about the master node. 
+who manages the list of active brokers?
+how does it know that broker has possibly crashed?
+or a new broker has recently joined the cluster?
+
+Suppose a broker is active and it is taking care of some responsiblities in the cluster.
+Suddenly the broker leaves the cluster or dies for some reason.
+Now At this stage, how will perform those responsiblities, We need some one to reassign that work to an active broker to ensure that the cluster continues to function.
+
+Kafka Broker is a master less Cluster. It does'nt follow master slave architecture.
+However, It uses Apache Zookeeper to maintain the list of active brokers.
+
+
+** What is Zookeeper in Kafka? 
+
+Every kafka broker has a unique ID that you define in the broker configuration file.
+We also specify the zookeeper connection details in the broker configuration file.
+
+When Broker starts, it connects to zookeeper (/brokers/ids) and creates an ephemeral node using broker_id represent the active broker session.
+The ephemeral node  remains intact as long as  the broker session with zookeeper is active.
+
+When the broker losses connectivity to the zookeeper for some reason, the zookeeper automatically removes the ephemeral node(/brokers/ids).
+So the list of brokers in the cluster is maintained as the list of ephemeral nodes under the "/brokers/ids" path in the zookeeper.
+
+To check this , execute the below command:
+
+-> zookeeper-shell.sh localhost:2181
+
+ls /
+
+ls /brokers/ids
+[0, 1, 2]
+
+
+** Kafka cluster Controller:
+
+Kafka is a master less cluster and the list of active brokers is maintained by Zookeeper.
+
+however, we still need someone to perform the administrative activites such a monitoring the list of active brokers ans reassiging the work when an active broker leaves the cluster.
+
+
+** Kafka Controller:
+
+All those activities are performed by a controller in the kafka cluster.
+The controller is not a master. It is simply a broker that is elected as a controller to pick up some extra responsibilites.
+That means, Controller also acts as a regular broker.
+
+So, if you have a single node cluster, it serves as a controller as well as a broker.
+
+There will be only one controller in the kafka cluster at any point of time.
+The controller is responsible for monitoring the list of active brokers in the zookeeper, When the controller notices that a broker left the cluster, it knows that 
+it is time to reassign some work to other brokers. the controller election is a straightforward.
+The first broker that starts in the cluster becomes the controller by creating the ephemeral(controller) node in the zookeeper.
+When other brokers start, they also try to create this node, but they receive an exception as 'node already exists' which means controller is already elected.
+In that case, they start watching the controller more than the zookeeper to disappear.
+When the controller dies, the ephemeral node disappear. Now every broker again tries to create the controller node in the zookeeper, but only one succeeds, and other get an exception once again.
+This process ensures that there is always a controller in that cluster, and there exists only one controller.
+
+To check this,:
+
+ls /
+get /controller
+
+NOTE: Zookeeper is the database of the kafka cluster control information, and one of the broker in the cluster is elected to take up the responsibilites of the controller and take care of the cluster level activities
+
+
+We have two dimensions of Apache Kafka.
+1. Partitions - Log files
+2. Cluster Formation
+
+
+** What makes Kafka Scalable and fault tolerant.
+
+Kafka Fault Tolerance:
+
+A Topic is broker into independent partitions. Each Partition is self-contained.
+which means, all the information about the partition, such as  segment files,indexes are stored in the same directory.
+This structure is excellent because it allows us to distribute the work among the brokers in a cluster efficiently. All we need to do is to spread the responsibilites
+of partitions in the Kafka Cluster.
+
+When you create a topic, the responsibility to create, store and manage partitions is distributed among the available brokers in the cluster.
+That means,every kafka broker in the cluster is responsible for managing one or more partitions that are assigned to that broker. That's how thw work is shared across the brokers. 
+
+
+Kafka Cluster is a group of brokers. These brokers may be running on individual machines. In the large production cluster, It will be Organized those machines in multiple racks.
+
+Suppose we have six brokers placed in two different racks(three each). How are the partitions allocated to the brokers? means how we decide which brokers should be maintaining which partitions?
+
+you decide to create a topic with 10 partitions with replication factor 3. => Kafka have 30 replicas to allocate to six brokers.
+
+Are there any rules for the assigment?
+
+Kafka tries to achieve two goals for this parition allocation,
+1. Partitions are evenly distributed to achieve work load balance.
+2. Follower(Duplicate copies) partitions must be placed on different machines to achieve fault Tolerance.
+
+** To distribute 30 Partitions, Kafka applies following steps,
+
+1. Make the ordered List of available brokers.
+2. Assign Leader and follower to the list in order.
+
+Kafka begins with a randomly chosen broker in a rack and places it into a list.
+
+R1-B0
+R2-B3
+R1-B1
+R2-B4
+R1-B2
+R2-B5
+
+So we have ordered list of brokers.
+
+Fault Tolerance?
+
+Once we have the ordered list of available brokers, Assigning partitions is as simple as assign one to each broker using a round robin method.
+Kafka starts with leader partitions and finishes creating all leaders first
+
+Broker	Leader	First Followers	Second Followers
+R1-B0	P0, P6	 P5	             P4
+R2-B3	P1, P7	 P0, P6	         P5
+R1-B1	P2, P8	 P1, P7	         P0, P6
+R2-B4	P3, P9	 P2, P8	         P1, P7
+R1-B2	P4	     P3, P9	         P2, P8
+R2-B5	P5	     P4	             P3, P9
+
+
+Leaders and Followers are created across the cluster.
+If you look at the outcome of this allocation, we couldn't  achieve a perfectly even distribution.
+Becoz, B0 has four Partitions, Broker 4 got six partitions. even if one of the rack goes down, we even have a copy of data available, which satisfies the rule "fault Tolearnt"
+
+Responsibilites of Partition Leader vs Follower:
+
+In the above example, we distributed 30 replicas across the brokers. each broker owns multiple replicas
+For example: Broker holds six replicas, two of these replicas are leader parititons (P3, P9), remaining four are the Follower partitions.
+
+So the Broker acts as a leader for two leader partitions, and acts as a follower for four follower partitions.
+
+What does that mean ? what does it mean by a broker to act as a leader ?
+
+Regarding Kafka Broker, Being a leader means one thing. The leader is responsible for all the requests from the producers and consumers.
+
+For example, Producer wants to send some messages to kafka topic, So producer will connect to one of the broker in Kafka Cluster and query for the topic metadata.
+All the kafka Brokers can answer the metadata request, and hence the producer can connect to any of the broker and query the metadata.
+
+** The metadata contains a list of all the leader partitions and their respective host and port information.
+Now the producer has a list of all leaders. It is the producer that decides on which partition does it want to send the data and accordingly send the message to the respective broker.
+That means producer directly transmits the message to a leader. On receiving the message, the leader broker persists the message in the leader partition and send back the acknowledgement.
+
+Similarly, when a consumer wants to read a message, It always reads from the leader of the partition.
+So Producer and consumer always interact with the LEADER. That's what the responsibility of the leader broker.
+
+-> Kafka acts as a follower for the follower partitions that are allocated to the broker.
+Broker B4 owns four follower partitions , So B4 acts as a follower for these four replicas. Follower do not serve Producer and consumer requests.
+Their job is to copy messages from the leader and stay Up to date with all the messages.
+
+The main aim of the follower is to get elected as a leader. When the current leader fails or dies, So they have a single  point agenda. Stay in sync with the leader.
+Because they can;t get elected as a leader if they are falling behind the leader and fail to be in sync with the leader by copying all the messages.
+
+How does the follower stay in sync with LEADER?
+
+To stay in sync with the leader, the follower connects to the leader and requests the data, the leader send some messages and the follower persists them in the replica and requests for more.
+This goes on forever  as an infinite loop to ensure that the followers are in sync  with the leader.
+
+
+
+ISR LIST:
+
+some Followers can still fail to stay in sync for various reasons
+1. Network congestion -> it can slow down the replication and followers may start following behind.
+2. broker Failures / Follower broker Crash/Restart -> all the replicas in that broker will being falling behind until we restart the follower broker and they can start replicating again.
+
+Since the replicas are falling behind, the leader has one more important job is to maintain a list of In-Sync-Replicas(ISR). This list is known as ISR List of the partition and persisted in the zookeeper.
+This list is maintained by the leader broker. 
+
+The ISR List is very critical. 
+Because all the followers in that list are known to be in sync with the leader. and they are an 
+excellent candidate to be elected as a new leader when something wrong happens to the current leader. and that makes the ISR List a Critical thing.
+
+
+how do a leader would know if the follower is in Sync or in lagging ?
+
+The followe will connect to the leader and requests for the messages.
+The first request would ask  the leader to send messages  is starting from the offset Zero. Assume the leader had got 10 messages, So it sends all the them(0-9) to follower
+The follower stores them and do the replica and again requests for new messages starting from offset 10.
+In this case, since the follower asked the offset 10, that means  Leader can safely assume that the follower has already persisted all the earlier messages.
+So by looking at the last offsets requested by the follower, the leader can tell  how far behind is the replica.
+
+If the replica is 'not too far' , the leader will add the follower to the ISR list, or else the follower is removed from the ISR list. That means the ISR List is Dynamic,
+and followers are keep getting added and removed from the ISR list depending  on how far  they maintain thier in sync status.
+
+
+how do we define 'not too far' ?
+
+As a matter of fact, the follower will always be a little behind the leader. because follower needs to ask for the messages from the leader, receive message over the Network, store them into replica and then ask for more
+
+All these activites takes some time. and hence leader will give them some minimum time as a margin to accomplish this.
+Default value of 'not too far' is 10 seconds. we can increase / decrease using kafka configurations.
+So the replica is kept in the ISR list if they are not more than 10 seconds behind the leader. That means , if the replica has requested the most recent message in the last 10 seconds, they deserve to be in the ISR list.
+If not the leader removed the replica from the ISR List.
+
+
+
+COMMITTED Vs UNCOMMITTED MESSEGES:
+
+We already understand  that the followers may be lagging behind the leader for several reasons and they might get removed from the ISR list.
+
+Assume All the followers in the ISR are 11 seconds behind the leader, that means none of them are qualified to be in the ISR. So your ISR List becomes logically empty.
+The messages are at the leader now right?
+Now for some reason, the leader creashed and we need to elect a new leader, who do we choose?
+
+If we elect  a new leader  among the  followers that are not in the ISR, we loose those messages that are collected  at the leader  during the most recent 11 seconds? YES 
+
+how do we handle this?
+
+This is been implemented in two concepts
+1. Committed Vs UnCommited 
+2. Minimum In-Sync replicas.
+
+You can configure the leader to not to consider the message committed until the message is copied to all the follower in the ISR List.
+If you do that leader will have some committed and Uncommitted messages right ?
+
+The message is committed when it is safely copied at all the replicas in the ISR , Now If the message is committed, we cannot lose it, until we lose all the replicas. right?
+So committed messages are now taken care of
+However, If we lose the leader, we still miss the uncommitted messages.Isn't it?
+But the Uncommmitted messages should'nt be a vary, becoz those can be re-SENT by the producer. why ?
+
+Because, producers can choose the receive acknowledgement of sent messages only after the message is fully committed. In that case, Producer will wait for the acknowledgement for a timeout period.
+and resend the messages in the absence of commit acknowledgement, So the uncommitted messages are lost at the failing leader.
+But the newly elected leader will recieve those messages again from the producer., That's how the all the messages can be protested from the loss.
+
+
+Minimum In-Sync Replicas?
+
+The data is Considered committed when it is written to all the in Sync replicas right?
+
+Now Lets assume that we start with three replicas and all of them are healthy enough to be in ISR. After some time , two of them failed. As a result of that, LEADER will remove them from ISR.
+In this case, eventhough we configured the topic to have three replicas, we are left with the single in-sync replica, that is the leader itself.
+Now the data is considered committed when it is written to all in-sync replicas, even when all means Just One replica( the leader Itself.)  right?
+It is a risky scenario for data consistency becoz, data could be lost, if we loose the leader.
+
+Kafka protects this scenerio by setting the minimum number of in-sync replicas for a topic.
+If you would like to be sure that committed  data is written to at least two replicas, you need to set the minimum number of In-Sync replicas(min.insync.replicas=2) as 2.
+
+however, there is a side effect for this setting.
+If a topic has three replicas and you set the minimum in-sync replicas to 2, then you can only write a partition in the topic 
+if at least two out of the three replicas are in-sync. When at least two replicas are not in sync, the broker will not accept any messages and respond with 'not enough replicas' exception.
+In other words, Leader becomes read only partition. you can read, but you cannot write until you bring another replica online and wait for it to catch and get in sync.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
