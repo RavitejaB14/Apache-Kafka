@@ -1,0 +1,129 @@
+ How to Process Kafka Streams?
+
+ Kafka offers you three tools for this purpose
+
+ 1. Consumer API
+ 2. Streams API
+ 3. KSQL
+
+ Problem statement for Creating Kafka Consumer Application?
+
+ We created POS Simulator application that generates a series of invoices and sends them to Kafka topic
+ In this example '09-pos-validator-starter.zip', we want to implement a miniature form of a real time data validation service for Invioces.
+ We want o read all the imvioces in real-time . Apply some business rules to validate the invoices, If the validation passed, send them to a kafka topic of valid invoices,
+ If the validation failed, send them to kafka topic of invalid invoices
+
+
+ POS Event Producer -> Kafka Cluster -> ConsumerAPI(Read) -> Valid -> Target topics(Valid/InValid)
+
+
+ In all such consume-transform-produce pipelines, Your application will createa kafka consumer Object, Subscribe to the kafka topic, and start receiving messages. transforming and validate the results.
+
+ However, your application will be falling behind, if the rate at which producers write messages to topic exceeds the rate at which you can transform and write them to an external system.
+
+ If you are limited to a single consumer, reading and processing data, your application may fall farther and farther behind.
+  and would no longer remain a real time application.
+
+  In this case, we need to scala consumption from topics
+
+
+How to scale Kafka consumers?
+
+We can scale a consumer application by dividing  the work amoung multiple consumers.
+we also need  a mechanism to split  the data among the comsumers, so they work with own set of data and do not interfere with each other.
+This is where the topic partitions are handy
+When we have multiple consumers working in a group and reading data from a same topic, we can easily split the data among consumers by assigning them one or more partitions.
+So each consumer is attached with a set of partitions and they read data only from the assigned partitions.
+
+Suppose, if we have 10 partitions in a topic, and there are two consumers in the same group reading data from the same topic,
+Kafka would assign 5 partitions to each consumer. this Arrangement clearly divides the data among the consumers to ensure that they do not read the same message.
+In this scenerio, Every record is delivered to one and only one consumer in the group and there is no duplicate processing.
+
+This Arrangement also adds a restriction on the scalability that would be the equal to the number of partitions in a given topic.
+For example, If you have 10 partitions, you can add a maximum of 10 consumers in a group, each assigned with a single partition to read.
+
+How can we create a consumer group and add new consumers in the same group??
+
+Do we also need to do something for assigning partitions to the consumers ?
+
+Kafka offers automatic group management and rebalancing of the workload in a consumer group.
+All we need to do is to set the group id configuration. Kafka automatically forms a consumer group and it would also add the consumer to the same group if they have the same group ID.
+Kafka will also take care of assigning partitions to the consumer in the same group.
+Membership in a consumer group is maintained dynamically, If a consumer fails, the partitions assigned to it will be reassigned to other consumers in the same group.
+Similarly, if a new consumer, partitions will be moved from the existing consumers to the new one to maintain the workload balance.
+
+
+
+Consumer Positions - Current Offset Vs Committed Offset:
+
+So the problem of scalability for the consumers is taken care by the consumer groups.
+
+The Issue of fault tolerance is also taken care of by the rebalancing within the consumer groups.
+
+Assume that the partition was initially assigned to the consumer, The consumer processed some messages for a while and crashed.
+Kafka automatic rebalancing will detect the failureof the consumer and reassign the unattended partition to some other consumer in the group.
+
+** The new consumer should not reprocess the events that are already processed by the earlier consumer before it failed.
+
+How would kafka handle it ?
+
+Consumer current Position ?
+
+Offset uniquely Identifies every message in a partition, Kafka also maintains two offset positions for each partition.
+
+1. Current Offset Position.
+2. Committed Offset Position.
+
+These positions are maintained for the consumer.
+The current Offset position of the consumer is the offset of the next record that will be given out to the consumer for the next poll()
+
+In the beginning, the current offset might be unknown or null for a new consumer Subscription. In that case, you can set the auto-offset-reset configuration to the earliest or latest.
+
+If you set as earliest -  kafka will set the current offset position to the first record in the partition and start giving you all the messages from the beginning.
+If you set as Latest (Default Value) -  where you will send you only upcoming messages after the consumer subscribed and ignore all earlier messages.
+
+If the consumer fails or restarts,  then the current offset is determined once again. for that reason, If you restart a consumer after a failure, you may start getting the records once again that were already sent earlier session.
+
+To avoid this situation,Kafka also maintains a committed offset position, every time you poll(), The consumer will automatically commit the earlier current-offset and send somemore records.
+
+These new records  are then automatically committed by the next poll(). This mechanism is known as auto-commit
+
+
+Committed Offset position is the last offset that has been stored securely at the broker. So when the consumer process fails and restarts or the partition is reassigned to someother consumerin the group.
+The committed offset is used to override the current offset partition for the consumer.
+
+Summary -
+1. Committed Offset is securely stored with the broker.
+2. When the consumer restarts or the partition is reassigned to another consumer, The committed Offset is used to avoid duplicate processing and all this happens automatically in most of the cases. But you also have options to take control in your hand and do it manually using commit APIs.
+3. The current offset is determined as latest or earliest only when there is no committed offset. otherwise committed offset is used to set the current offset.
+
+
+
+Challenges with Kafka consumers ???
+
+1.  We have comsumer, we poll() some messages,Segregate them into valid and invalid  , Send them to differnet topics and before we poll() again for more messages. the consumer crashed.
+    what will happen? the committed offset at the broker is still null. why ? Becoz, the committed -offset is updated  when we poll again. that is the time when broker assumes that we successfully processed the earlier ones. So those messages should be committed to avoid a resend.
+    This situation will creates duplicates for sure. how do we handle this ? We will fix it by implementing Kafka Transactions. However It required some extra coding, testing and new bugs may arise.
+2. Other scenerio,, You wanted to compute total sales by storeID, how to do ? read the storeId and total sale value from Invoice and Insert it into Key./value Map. For the next invoice, do the same, and but this time sum it to the previous amount . Simple . But what about fault Tolerant ? what if the application crashes, you would lose the in-memory map. you need to save it somewhere . may be on local disk ? but what if localdisk crashes.
+   Similarly, think about joining two topics in real time. all that can be done, but not that easy, we should write lot of complex code and increasing the cost and complexity of your application.
+
+   Basic features for creating real -time stream processing applications are missing from the kafka consumer API's That is where kafka streams API turns out to be handy.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,14 @@
+
+Different complex format types
+
+Kafka is dealing with data records in variety of formats
+
+1. How to create JAVA types (POJOs) ?
+2. How to serialize your JAVA types? 
+
+
+We want to be able to define a message schema using simple Schema defination Language, then we want our IDE  or build tool to generate Java Class defination from the schema defination automatically.
+
+1. Json Schema to POJOs
+2. AVRO Schema to POJOs
+

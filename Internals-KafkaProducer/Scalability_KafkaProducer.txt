@@ -1,0 +1,35 @@
+Scaling up the Producers:
+
+Scaling of Kafka Application is straightForward.
+
+** If you have hundreds of producers sending messages in parallal, you may want to increase the number of brokers in your kafka cluster.
+
+A Single Kafka Broker can handle hundreds of messages. or may be thousand of messages per second.
+However, you can increase the number of brokers in the cluster and support hundreds of thousands of messages to be received and acknowledged.
+
+On the producer side, you can keep adding the new producers to send the messages to Kafka server in parallal.
+This arrangement provides linear scalability by merely adding more producers and brokers. This approach works perfectly for scaling up your overall streaming bandwidth.
+
+You can also have an opportunity to scala an individual producer using multithreading technique.
+
+A single producer thread is good enough to support the use cases where the data is being produced at a reasonable pace.
+However, some scenerios may require parallalism at the individual producer level as well. You can handle such requirements using multithreaded Kafka producer.
+
+Multithreaded scenerio may not apply to application that do not frequently generate new messages.
+
+For Example: An Individual POS Application would be producing an invoice  every 2-3 minutes, In that case, A single thread is more than enough to send the invoices to the kafka cluster.
+
+However, If the application that generates or receives data at high speed and wants to sent it as quickly as possible, you might want to implement Multiple threaded application.
+
+
+Problem Statement:?
+
+Create a multiThreaded Kafka Producer that sends data from the list of files to a kafka topic such that independend thread streams each file.
+
+Datafiles -> MainThread -> Multiple Threads -> Kafka broker
+
+Show example in : 03-multi-threading-starter.zip
+
+
+
+

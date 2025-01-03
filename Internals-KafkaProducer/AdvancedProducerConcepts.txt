@@ -1,0 +1,86 @@
+At Least Once Vs At Most Once ?
+
+Apache Kafka provides message durability by committing the message at the partition log.
+
+Durability means - Once the data is persisted by the leader broker in the leader partition, we can't lose the message till leader is alive.
+However , If the leader broker goes down, we may lose the data. To protect the lose of records due to leader failure, Kafka Implements Replication.
+and Kafka implements replication using followers. The followers will copy messages from the leader and provide fault tolerance in case of leader failure.
+In other words, When the data is persisted to the leader as well as to the followers in the ISR List, we consider the message to be fully committed.
+Once the message is fully committed, We can't lose the record until the leader and all the replicas are lost.
+
+In all these cases, We still have a possibility of committing duplicate messages due to the producer retry mechanism. If the producer I/O thread fails to get a success acknowledgment from the broker, It will retry to send the same message
+Asssume that the  I/O thread transmits a record to the broker, The broker receives the data and stores it into the partition log. The Broker then sends an acknowledgment for the success and the response
+does not reach back to the I/O thread due to network Error, In that case, Producer I/O thread will wait for the acknowledgment and ultimately send the record again assuming a failure. So the Broker again receives the data, but it doesnot have a mechanism 
+to identify that the message is a duplicate of an earlier message, heance broker saves the duplicate record causing a duplication problem. This implementation is known as At-least Once Semantics where we cannot lose messages because we are retrying until we get a success acknowledgment
+However, we may have duplicates because we do not have a method  to identify a duplicate message , For that reason, Kafka is said to provide at lease once semantics.
+
+Kafka also allowes you to implement at-most once semantics, You can achieve at-most once by configuring the retries to Zero, In that case, we may lose some records, but you will never have a duplicate record committed to the kafka logs.
+
+
+** Kafka is default at-least once system and you can configure it to get at-most once, but some use cases want to implement exactly-once semantics.
+
+Which means, we don't lose anything and at the smae time we don;t create duplicate records.
+
+how to achieve exactly once semantics ?
+
+Kafka offers an Idempotent producer configuration -   "enable.Idempotence = true"
+
+Now, the behaviour of producer API will be changed: It will do two things.
+
+1. Internal ID for Producer Instance -  it will perform an Initial handshake with the leader broker and ask for the unique producer ID. At the broker side, Broker dynamically assigns a unique ID to each producer
+2. Message Sequence Number - The producer API will start assigning a sequence number to each message, This sequence number starts from zero and monotonically increaments per partition.
+   Now when I/O thread sends a message to the leader, the message is uniquely identified by the producer ID and SEQ Number.
+   Now the Broker knows that the last committed message sequence number is X and the next expected sequence number is X+1. This allows the broker to identify duplicates as well as missing sequence Numbers
+   Setting enable.Idempotence = true will ensure that the messages are neither lost not duplicated.
+
+   ** NOTE: if you are sending duplicate messages  at your application level, this configuration cannot protect you from duplicates. That should be considered as a bug in your application.
+   Even if two producer instance are sending duplicates, that is also an application problem.
+   The Idempotence is only guaranteed for the producer reties and you should not try to resend the messages at the application level.
+
+
+
+Transactional Producer(Transactions in Kafka Producer):
+
+The Transactional producer goes one step ahead of Idempotent producer and provide the transactional guarantees.
+I.e - An Ability to write to several partitions atomically.
+The atomicity has the same meaning as in databases that means, either all the messages within the same transaction are committed or none of them are saved.
+
+Single Transaction - all or Nothing
+
+Example - 04-transactional-producer-starter.zip
+
+We create two topics, hello-producer-1, hello-producer-2, we are going to implement a transaction that would send some messages to both the topics, when we commit a transaction, the message will be delivered to both the topics
+If we abort or rollback the transaction, Our message should not be sent to any of the topics. - that's what atomicity means.
+
+Implementing transactions requires some mandatory topic level configurations. All topics which are included in a transaction, should be configured with the replication factor of atlease three and min.insync.replicas should be set to 2 atleast.
+
+
+Conf - props.put(ProducerConfig.TRANSACTIONAL_ID_CONFIG, AppConfigs.transaction_id);
+
+1. When you set the transaction_id, Idempotence is automatically Enabled, Because Transactions are dependent on Idempotence.
+2. TRANSACTIONAL_ID_CONFIG must be unique for each producer Instance. - means you cannot run two instances of a producer with the same transactional id.
+    If you do so, then one of the transactions will be aborted, because two instances of same transaction are Illegal.
+    ** The Primary purpose of the transactional_ID is to rollback the older unfinished transactions for the same transaction ID in case of producer application Bounces or restarts.
+
+
+    Then, how do I run multiple instances of the producer to achieve horizontal scalability. -  Each instance can set its own unique transaction id and all of those would be sending data to the same topic implementing similar transaction. But all those transactions would be different and will have their own transaction ID
+
+Implementing a transactional producer is a three step process
+1. Initilize the transaction by calling initTransactions() - this method preforms the necessary check to ensures that any other transaction initiated by the previous instances of the same producer is closed.
+    That means, If the Application Instance Dies, the next instance can be guaranteed that any unfinished transactions have been either completed or aborted leaving the new instance in a clean state before resuming the work
+    It also retrieves an internal producer ID that will be used in all future messages sent by the producer. The Producer ID is used by the broker to implement Idempotence.
+
+    The next step is to wrap all your send() API Calls within a pair of beginTransaction() and commitTransaction()
+
+Final note about Transactions:
+
+1. Same producer cannot have multiple open transactions, you must commit or abort the transaction before you can begin a new one.
+2. CommitTransaction() will flush any unsent records before committing the transaction.
+3. If any of the send() call failed with an Irrecoverable Error, that means even if a single message is not successfully delivered to Kafka, CommitTransaction() call throw the exception and you are supposed to abort the whole transaction.
+4. In Multithreaded Producer Implementation, you will call send() API from different Threads, However, you must call the beginTrasactions() before starting those threads and either commit or abort when all the threads are complete.
+
+
+
+
+
+
